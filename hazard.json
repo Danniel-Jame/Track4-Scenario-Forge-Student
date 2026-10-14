@@ -1,0 +1,40 @@
+{
+ "format": "avsim-studio/1",
+ "params": {
+  "cutT0": 6.5,
+  "cutDur": 2.4,
+  "cutV": 15,
+  "pedT0": 11,
+  "pedV": 1.45,
+  "busGo": 17,
+  "cutDs": -4,
+  "tgT": 0.9,
+  "mu": 0.8,
+  "cutGap": 12,
+  "cutBrake": 0,
+  "pedGap": 4.5,
+  "pedLook": 1,
+  "civil": true
+ },
+ "policy": {
+  "v0": 16
+ },
+ "hazards": [
+  {
+   "x": 200,
+   "side": "S",
+   "v": 3,
+   "t0": 0,
+   "trig": 30,
+   "type": "ped"
+  }
+ ],
+ "ego": "planner",
+ "space": {
+  "h0_x": [150, 250],
+  "h0_v": [1.0, 4.0],
+  "h0_trig": [10, 40]
+ },
+ "exposure": 0.05,
+ "why": "Người đi bộ cắt ngang đường ngẫu nhiên không đúng vạch (jaywalking). Khoảng không gian tham số được chọn dựa trên vị trí quan sát x từ 150m đến 250m, tốc độ di chuyển từ 1.0 đến 4.0 m/s, và khoảng cách kích hoạt từ 10m đến 40m. Tần suất exposure được ấn định 0.05 đại diện cho trung bình 1 lần gặp sự cố trong 20 chuyến đi đô thị."
+}
