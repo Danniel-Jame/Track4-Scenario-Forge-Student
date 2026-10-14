@@ -16,4 +16,29 @@ def label_mode(R: core.Rollout, k: int, event: dict, contact_type) -> str:
       'other'      - anything else
     Check in that order. Positions and speeds at contact: R.F[k, event["f"], core.IX["C2"]] (x is column 0, v is 4).
     """
-    raise NotImplementedError("TODO 8: label_mode")
+    kind = event.get("kind")
+    actor_a = event.get("a")
+    actor_b = event.get("b")
+    frame = event.get("frame")
+    
+    # 1. Kiểm tra 'crosswalk_block': bên còn lại là người đi bộ P1 (ego chặn đường hoặc va chạm với P1)[cite: 5]
+    other_actor = actor_b if actor_a == "ego" else actor_a
+    if other_actor == "P1" or kind == "block":
+        return "crosswalk_block"
+        
+    # 2. Kiểm tra 'rear_ended': phương tiện khác tông vào đuôi xe ta[cite: 5]
+    if contact_type(R, k, event) == "rear":
+        return "rear_ended"
+        
+    # 3. Kiểm tra 'bus_bypass': xe ta va chạm với C2 khi C2 đang lách qua xe buýt đỗ (x < 112m và v < 6 m/s)[cite: 5]
+    if other_actor == "C2":
+        c2_data = R.F[k, frame, core.IX["C2"]]
+        x_c2 = c2_data[0]
+        v_c2 = c2_data[4]
+        if x_c2 < 112.0 and v_c2 < 6.0:
+            return "bus_bypass"
+        else:
+            return "cut_in"
+            
+    # 4. Các trường hợp còn lại khác[cite: 5]
+    return "other"

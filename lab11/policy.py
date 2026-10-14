@@ -9,4 +9,20 @@ def choose_policy(table: list[dict], baseline_progress: float, max_loss: float =
 
     Ranking by the UPPER bound, not the point estimate, stops you picking a policy that only looks safe
     because its few test crashes happened not to be drawn."""
-    raise NotImplementedError("TODO 10: choose_policy")
+    min_progress_threshold = (1.0 - max_loss) * baseline_progress
+    
+    qualified_rows = []
+    for row in table:
+        progress = row.get("progress", 0.0)
+        if progress >= min_progress_threshold:
+            qualified_rows.append(row)
+            
+    if not qualified_rows:
+        return None
+        
+    # Sắp xếp các hàng đủ điều kiện:
+    # 1. Ưu tiên fail_hi thấp nhất (tăng dần)
+    # 2. Nếu fail_hi bằng nhau, ưu tiên progress cao nhất (giảm dần)
+    best_row = min(qualified_rows, key=lambda r: (r.get("fail_hi", float("inf")), -r.get("progress", 0.0)))
+    
+    return best_row

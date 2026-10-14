@@ -20,7 +20,44 @@ def cem_update(Z, Bn, score, prev: dict, rho: float = 0.1, smooth: float = 0.7, 
       level = the lowest score inside the elite (how dangerous the elite already is)
 
     Why the floors: a std that collapses to 0 or a probability of exactly 0/1 makes importance weights explode."""
-    raise NotImplementedError("TODO 5: cem_update")
+    n = len(score)
+    # Xác định số lượng mẫu elite: top ceil(rho * n), tối thiểu là 2 (hoặc n nếu n nhỏ hơn 2)
+    n_elite = max(2, math.ceil(rho * n))
+    n_elite = min(n_elite, n)
+    
+    # Sắp xếp điểm số theo thứ tự giảm dần (điểm cao hơn = nguy hiểm hơn), 
+    # với điểm bằng nhau thì hàng nào xuất hiện trước sẽ thắng (dùng kind="stable")[cite: 7]
+    sorted_indices = np.argsort(-score, kind="stable")
+    elite_indices = sorted_indices[:n_elite]
+    
+    # Lấy các mẫu elite tương ứng cho tọa độ liên tục (Z) và nhị phân (Bn)
+    elite_Z = Z[elite_indices]
+    elite_Bn = Bn[elite_indices]
+    
+    # Tính toán thống kê từ tập elite
+    elite_mean = np.mean(elite_Z, axis=0)
+    elite_std = np.std(elite_Z, axis=0, ddof=0)
+    elite_freq = np.mean(elite_Bn, axis=0)
+    
+    # Cập nhật theo hệ số làm mượt `smooth` và giá trị cũ `prev`
+    new_mean = smooth * elite_mean + (1.0 - smooth) * prev["mean"]
+    
+    raw_std = smooth * elite_std + (1.0 - smooth) * prev["std"]
+    new_std = np.maximum(min_std, raw_std)
+    
+    raw_p_bin = smooth * elite_freq + (1.0 - smooth) * prev["p_bin"]
+    new_p_bin = np.clip(raw_p_bin, p_clip[0], p_clip[1])
+    
+    # Mức độ nguy hiểm tối thiểu bên trong tập elite (điểm số thấp nhất trong nhóm elite)
+    elite_scores = score[elite_indices]
+    level = float(np.min(elite_scores))
+    
+    return dict(
+        mean=new_mean,
+        std=new_std,
+        p_bin=new_p_bin,
+        level=level
+    )
 
 
 # ---------------------------------------------------------------- given
