@@ -19,7 +19,7 @@ def label_mode(R: core.Rollout, k: int, event: dict, contact_type) -> str:
     kind = event.get("kind")
     actor_a = event.get("a")
     actor_b = event.get("b")
-    frame = event.get("frame")
+    frame = event.get("f", event.get("frame"))
     
     # 1. Kiểm tra 'crosswalk_block': bên còn lại là người đi bộ P1 (ego chặn đường hoặc va chạm với P1)[cite: 5]
     other_actor = actor_b if actor_a == "ego" else actor_a

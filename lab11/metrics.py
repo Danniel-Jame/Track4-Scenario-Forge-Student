@@ -95,25 +95,26 @@ def contact_type(R: core.Rollout, k: int, event: dict) -> str:
     Put the other actor in the ego's frame: lon = r . h, lat = -r_x h_z + r_z h_x with h = (hx, hz) of the ego.
     'front' if lon > 2.3 and |lat| < 1.6; 'rear' if lon < -2.3 and |lat| < 1.6; otherwise 'side'.
     """
-    frame = event["frame"]
+    # Lấy chỉ số khung hình từ khóa 'f' hoặc 'frame'
+    frame = event.get("f", event.get("frame"))
     ego_idx = core.IX["ego"]
     
-    # Xác định actor còn lại trong sự kiện va chạm
+    # Xác định đối tượng va chạm còn lại
     other_actor_name = event["b"] if event["a"] == "ego" else event["a"]
     other_idx = core.IX[other_actor_name]
     
-    # Lấy dữ liệu tại khung hình xảy ra va chạm
+    # Lấy trạng thái của ego và đối tượng tại khung hình va chạm
     ego_f = R.F[k, frame, ego_idx]
     other_f = R.F[k, frame, other_idx]
     
     x_ego, z_ego, hx_ego, hz_ego = ego_f[0], ego_f[1], ego_f[2], ego_f[3]
     x_other, z_other = other_f[0], other_f[1]
     
-    # Vector từ ego sang actor kia (r)
+    # Vector khoảng cách giữa 2 xe
     rx = x_other - x_ego
     rz = z_other - z_ego
     
-    # Chuyển sang hệ tọa độ của ego
+    # Chuyển sang tọa độ dọc (lon) và ngang (lat) trong hệ quy chiếu của ego
     lon = rx * hx_ego + rz * hz_ego
     lat = -rx * hz_ego + rz * hx_ego
     
