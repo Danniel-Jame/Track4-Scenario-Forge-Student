@@ -12,7 +12,18 @@ from .search import proposal_logpdf
 def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     """TODO 4. Wilson score interval for k successes in n trials. Must behave at k = 0 (lower bound 0,
     upper bound > 0) where the plain normal interval collapses to [0, 0]. Return (0, 1) for n = 0."""
-    raise NotImplementedError("TODO 4: wilson_ci")
+    if n <= 0:
+        return (0.0, 1.0)
+    
+    p_hat = k / n
+    denom = 1.0 + (z**2) / n
+    center = (p_hat + (z**2) / (2.0 * n)) / denom
+    margin = (z / denom) * math.sqrt((p_hat * (1.0 - p_hat) / n) + ((z**2) / (4.0 * (n**2))))
+    
+    lo = max(0.0, center - margin)
+    hi = min(1.0, center + margin)
+    
+    return (lo, hi)
 
 
 def log_weights(Z, Bn, nat: space.Natural, prop: dict, beta: float = 0.2) -> np.ndarray:
@@ -21,7 +32,16 @@ def log_weights(Z, Bn, nat: space.Natural, prop: dict, beta: float = 0.2) -> np.
 
     nat.logpdf(Z, Bn) gives log p; proposal_logpdf(prop, Z, Bn) gives log of the CEM proposal.
     Use np.logaddexp so a weight of 1e-30 does not underflow to 0."""
-    raise NotImplementedError("TODO 6: log_weights")
+    log_p = nat.logpdf(Z, Bn)
+    log_prop = proposal_logpdf(prop, Z, Bn)
+    
+    # Calculate log(q) = log( (1 - beta) * prop + beta * natural )
+    # using logaddexp for numerical stability:
+    log_term_prop = math.log(1.0 - beta) + log_prop
+    log_term_nat = math.log(beta) + log_p
+    log_q = np.logaddexp(log_term_prop, log_term_nat)
+    
+    return log_p - log_q
 
 
 def is_estimate(logw: np.ndarray, y: np.ndarray, z: float = 1.96) -> dict:
@@ -31,7 +51,28 @@ def is_estimate(logw: np.ndarray, y: np.ndarray, z: float = 1.96) -> dict:
     se = std(w * y, ddof=1) / sqrt(n); CI = [max(0, p - z se), p + z se];
     Kish effective sample size ess = (sum w)^2 / sum(w^2).
     Return dict(p=, lo=, hi=, se=, ess=, n=)."""
-    raise NotImplementedError("TODO 7: is_estimate")
+    n = len(logw)
+    if n == 0:
+        return dict(p=0.0, lo=0.0, hi=1.0, se=0.0, ess=0.0, n=0)
+        
+    w = np.exp(logw)
+    wy = w * y
+    
+    p = float(np.mean(wy))
+    
+    if n > 1:
+        se = float(np.std(wy, ddof=1) / math.sqrt(n))
+    else:
+        se = 0.0
+        
+    lo = float(max(0.0, p - z * se))
+    hi = float(p + z * se)
+    
+    sum_w = np.sum(w)
+    sum_w2 = np.sum(w**2)
+    ess = float((sum_w**2) / sum_w2) if sum_w2 > 0 else 0.0
+    
+    return dict(p=p, lo=lo, hi=hi, se=se, ess=ess, n=int(n))
 
 
 def rule_of_three(n_eff: float) -> float:
